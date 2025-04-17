@@ -90,3 +90,72 @@
     active: bool
   }
 )
+;; Community membership
+(define-map community-members
+  {
+    community-id: (string-ascii 50),
+    member: principal
+  }
+  {
+    join-height: uint,
+    active: bool
+  }
+)
+
+;; Resources shared with communities
+(define-map community-resources
+  {
+    community-id: (string-ascii 50),
+    resource-id: (string-ascii 50)
+  }
+  {
+    grant-height: uint,
+    active: bool
+  }
+)
+
+;; Functions for administration
+
+;; Set the contract owner
+(define-public (transfer-ownership (new-owner principal))
+  (begin
+    (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+    (var-set contract-owner new-owner)
+    (ok true)
+  )
+)
+;; Add a supported token
+(define-public (add-supported-token (token-contract principal) (name (string-ascii 50)) (min-balance uint))
+  (begin
+    (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+    (map-set supported-tokens
+      { token-contract: token-contract }
+      {
+        name: name,
+        active: true,
+        min-balance: min-balance
+      }
+    )
+    (ok true)
+  )
+)
+
+;; Update token status
+(define-public (update-token-status (token-contract principal) (active bool) (min-balance uint))
+  (begin
+    (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+    (asserts! (is-some (map-get? supported-tokens { token-contract: token-contract })) ERR-TOKEN-NOT-FOUND)
+    
+    (let ((token (unwrap-panic (map-get? supported-tokens { token-contract: token-contract }))))
+      (map-set supported-tokens
+        { token-contract: token-contract }
+        {
+          name: (get name token),
+          active: active,
+          min-balance: min-balance
+        }
+      )
+    )
+    (ok true)
+  )
+)
