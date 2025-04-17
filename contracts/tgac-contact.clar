@@ -159,3 +159,41 @@
     (ok true)
   )
 )
+;; Functions for resource management
+
+;; Create a new gated resource
+(define-public (create-resource 
+                 (resource-id (string-ascii 50)) 
+                 (name (string-ascii 100))
+                 (token-contract principal)
+                 (base-token-requirement uint)
+                 (time-based bool)
+                 (usage-based bool)
+                 (tiered-access bool))
+  (begin
+    ;; Check if token is supported
+    (asserts! (is-some (map-get? supported-tokens { token-contract: token-contract })) ERR-TOKEN-NOT-FOUND)
+    ;; Check that resource doesn't already exist
+    (asserts! (is-none (map-get? resources { resource-id: resource-id })) ERR-RESOURCE-EXISTS)
+    
+    ;; Create resource
+    (map-set resources
+      { resource-id: resource-id }
+      {
+        name: name,
+        owner: tx-sender,
+        token-contract: token-contract,
+        base-token-requirement: base-token-requirement,
+        time-based: time-based,
+        usage-based: usage-based,
+        tiered-access: tiered-access,
+        active: true,
+        creation-height: block-height
+      }
+    )
+    
+    ;; If not using tiers, create the default tier
+    (if (not tiered-access)
+        (map-set resource-tiers
+          { 
+            resource-id: resource-id,
