@@ -49,3 +49,44 @@
     creation-height: uint
   }
 )
+;; Resource tiers - only used if tiered-access is true
+(define-map resource-tiers
+  { 
+    resource-id: (string-ascii 50),
+    tier: uint 
+  }
+  {
+    token-requirement: uint,
+    time-period: uint,        ;; In blocks (if time-based)
+    max-uses: uint,           ;; Max number of accesses (if usage-based)
+    features: (list 10 (string-ascii 50)) ;; List of features unlocked at this tier
+  }
+)
+
+;; User access rights
+(define-map user-access
+  { 
+    user: principal,
+    resource-id: (string-ascii 50)
+  }
+  {
+    access-granted: bool,
+    tier: uint,
+    grant-height: uint,        ;; Block when access was granted
+    expiry-height: uint,       ;; Block when access expires (for time-based)
+    uses-remaining: uint,      ;; For usage-based access
+    last-access-height: uint   ;; Last time resource was accessed
+  }
+)
+
+;; Community/group definitions for collective access
+(define-map communities
+  { community-id: (string-ascii 50) }
+  {
+    name: (string-ascii 100),
+    owner: principal,
+    token-contract: principal,
+    required-tokens: uint,
+    active: bool
+  }
+)
